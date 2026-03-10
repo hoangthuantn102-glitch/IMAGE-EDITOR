@@ -8,7 +8,7 @@ const proModel = 'gemini-3-pro-image-preview';
 const getApiKey = (): string => {
   const storedKey = localStorage.getItem('GEMINI_API_KEY');
   if (storedKey) return storedKey;
-  if (process.env.API_KEY) return process.env.API_KEY;
+  if (process.env.GEMINI_API_KEY) return process.env.GEMINI_API_KEY;
   throw new Error("Vui lòng nhập Gemini API Key trong phần Cài đặt.");
 };
 
