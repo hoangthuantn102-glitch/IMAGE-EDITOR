@@ -19,6 +19,7 @@ import AccessoryExtractor from './components/features/AccessoryExtractor';
 import PosterGenerator from './components/features/PosterGenerator';
 import AffiliateImageGenerator from './components/features/AffiliateImageGenerator';
 import InvitationGenerator from './components/features/InvitationGenerator';
+import StoryGenerator from './components/features/StoryGenerator';
 import HistoryPanel from './components/HistoryPanel';
 import { useHistory } from './hooks/useHistory';
 import ImageZoomModal from './components/ImageZoomModal';
@@ -28,6 +29,7 @@ const featureComponentMap = {
   [Feature.GeneratePoster]: PosterGenerator,
   [Feature.GenerateAffiliateImage]: AffiliateImageGenerator,
   [Feature.GenerateInvitation]: InvitationGenerator,
+  [Feature.GenerateStoryImages]: StoryGenerator,
   [Feature.GenerateConsistentCharacter]: ConsistentCharacterGenerator,
   [Feature.ExtractAccessory]: AccessoryExtractor,
   [Feature.ChangeBackground]: BackgroundChanger,

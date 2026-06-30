@@ -20,9 +20,8 @@ interface PoseReplicatorProps {
 
 const PoseReplicator: React.FC<PoseReplicatorProps> = ({ sessionToLoad, onSaveSession, imageToLoad, onSendImage }) => {
   const [subjectImage, setSubjectImage] = useState<string | null>(null);
-  const [poseImage, setPoseImage] = useState<string | null>(null);
+  const [poseImages, setPoseImages] = useState<string[]>([]);
   const [prompt, setPrompt] = useState<string>('');
-  const [numberOfImages, setNumberOfImages] = useState<number>(1);
   const [modelType, setModelType] = useState<'flash' | 'pro'>('flash');
   
   const {
@@ -46,7 +45,7 @@ const PoseReplicator: React.FC<PoseReplicatorProps> = ({ sessionToLoad, onSaveSe
     // When an image is sent from another feature, it becomes the subject image.
     if (imageToLoad) {
       setSubjectImage(imageToLoad);
-      setPoseImage(null);
+      setPoseImages([]);
       resetResultImages([]);
     }
   }, [imageToLoad]);
@@ -56,8 +55,13 @@ const PoseReplicator: React.FC<PoseReplicatorProps> = ({ sessionToLoad, onSaveSe
       setSubjectImage(sessionToLoad.originalImage);
       resetResultImages(sessionToLoad.resultImages);
       const params = sessionToLoad.parameters as ReplicatePoseParams;
-      setPoseImage(params.poseImage);
-      setNumberOfImages(params.numberOfImages);
+      if (params.poseImages) {
+        setPoseImages(params.poseImages);
+      } else if (params.poseImage) {
+        setPoseImages([params.poseImage]);
+      } else {
+        setPoseImages([]);
+      }
       setPrompt(params.prompt || '');
       setModelType(params.modelType || 'flash');
     }
@@ -93,8 +97,8 @@ const PoseReplicator: React.FC<PoseReplicatorProps> = ({ sessionToLoad, onSaveSe
   };
 
   const handleSubmit = async () => {
-    if (!subjectImage || !poseImage) {
-      setError('Vui lòng tải lên cả hai ảnh: người mẫu và dáng.');
+    if (!subjectImage || poseImages.length === 0) {
+      setError('Vui lòng tải lên ảnh người mẫu và ít nhất một ảnh dáng.');
       return;
     }
     setIsLoading(true);
@@ -112,16 +116,16 @@ const PoseReplicator: React.FC<PoseReplicatorProps> = ({ sessionToLoad, onSaveSe
 
     const results: string[] = [];
     try {
-      for (let i = 0; i < numberOfImages; i++) {
-        setLoadingMessage(`Đang tạo ảnh ${i + 1} trên ${numberOfImages}...`);
-        const newImage = await replicatePose(subjectImage, poseImage, prompt, modelType);
+      for (let i = 0; i < poseImages.length; i++) {
+        setLoadingMessage(`Đang xử lý ảnh dáng ${i + 1} trên ${poseImages.length}...`);
+        const newImage = await replicatePose(subjectImage, poseImages[i], prompt, modelType);
         results.push(newImage);
       }
       setResultImages(results);
       onSaveSession({
         originalImage: subjectImage,
         resultImages: results,
-        parameters: { poseImage, numberOfImages, prompt, modelType },
+        parameters: { poseImages, numberOfImages: poseImages.length, prompt, modelType },
       });
     } catch (e: any) {
         if (e.message && e.message.includes("Requested entity was not found.")) {
@@ -159,15 +163,22 @@ const PoseReplicator: React.FC<PoseReplicatorProps> = ({ sessionToLoad, onSaveSe
   return (
     <>
       <FeatureContainer
-        title="Sao chép dáng"
-        description="Tải lên ảnh người mẫu và ảnh dáng bạn muốn sao chép. Bạn có thể nhập thêm mô tả để tinh chỉnh kết quả."
+        title="Ghép mặt vào dáng"
+        description="Thay đổi khuôn mặt mẫu kết hợp vào ảnh dáng. Tải lên ảnh mẫu (để lấy khuôn mặt) và các ảnh dáng (tối đa 4 ảnh)."
         onSubmit={handleSubmit}
         isLoading={isLoading}
-        canSubmit={!!subjectImage && !!poseImage}
+        canSubmit={!!subjectImage && poseImages.length > 0}
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <ImageUploader id="subject-image" onImageUpload={setSubjectImage} value={subjectImage} title="1. Tải lên ảnh người mẫu"/>
-            <ImageUploader id="pose-image" onImageUpload={setPoseImage} value={poseImage} title="2. Tải lên ảnh dáng"/>
+            <ImageUploader 
+                id="pose-image" 
+                onImageUpload={(val) => setPoseImages(Array.isArray(val) ? val : [val])} 
+                value={poseImages.length > 0 ? poseImages : null} 
+                title="2. Tải lên ảnh dáng (Tối đa 4 ảnh)"
+                multiple={true}
+                maxFiles={4}
+            />
         </div>
 
         <div className="space-y-2">
@@ -202,20 +213,6 @@ const PoseReplicator: React.FC<PoseReplicatorProps> = ({ sessionToLoad, onSaveSe
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <ModelSelector value={modelType} onChange={setModelType} />
-            <div>
-                <label htmlFor="num-images" className="block text-sm font-medium text-gray-300">4. Số lượng ảnh kết quả</label>
-                <select
-                    id="num-images"
-                    value={numberOfImages}
-                    onChange={(e) => setNumberOfImages(parseInt(e.target.value, 10))}
-                    className="mt-1 block w-full pl-3 pr-10 py-2 text-base bg-slate-700 border-slate-600 focus:outline-none focus:ring-purple-500 focus:border-purple-500 sm:text-sm rounded-md"
-                >
-                    <option value={1}>1 ảnh</option>
-                    <option value={2}>2 ảnh</option>
-                    <option value={3}>3 ảnh</option>
-                    <option value={4}>4 ảnh</option>
-                </select>
-            </div>
         </div>
       </FeatureContainer>
 

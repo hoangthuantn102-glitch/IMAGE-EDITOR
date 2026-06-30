@@ -16,6 +16,7 @@ export enum Feature {
   GeneratePoster = 'GENERATE_POSTER',
   GenerateAffiliateImage = 'GENERATE_AFFILIATE_IMAGE',
   GenerateInvitation = 'GENERATE_INVITATION',
+  GenerateStoryImages = 'GENERATE_STORY_IMAGES',
 }
 
 export interface OutfitChangeOptions {
@@ -121,7 +122,8 @@ export interface GenerateFromIdeaParams {
 }
 
 export interface ReplicatePoseParams {
-  poseImage: string;
+  poseImage?: string; // Kept for backwards compatibility with old sessions
+  poseImages?: string[];
   numberOfImages: number;
   prompt?: string;
   modelType?: 'flash' | 'pro';
@@ -185,6 +187,14 @@ export interface InvitationGeneratorParams {
   modelType?: 'flash' | 'pro';
 }
 
+export interface StoryGeneratorParams {
+  story: string;
+  referenceImages: { image: string; name: string }[];
+  aspectRatio: '1:1' | '16:9' | '9:16';
+  quality: 'Standard' | 'High';
+  modelType?: 'flash' | 'pro';
+}
+
 export type FeatureParams =
   | BackgroundChangerParams
   | OutfitChangerParams
@@ -202,7 +212,8 @@ export type FeatureParams =
   | ExtractAccessoryParams
   | PosterGeneratorParams
   | AffiliateImageGeneratorParams
-  | InvitationGeneratorParams;
+  | InvitationGeneratorParams
+  | StoryGeneratorParams;
 
 
 export interface Session {

@@ -90,8 +90,8 @@ export const FEATURES = [
   },
   {
     id: Feature.ReplicatePose,
-    title: 'Sao chép dáng',
-    description: 'Lấy dáng từ một ảnh và áp dụng cho người trong ảnh khác, giữ nguyên khuôn mặt và phong cách.',
+    title: 'Ghép mặt vào dáng',
+    description: 'Thay đổi khuôn mặt mẫu kết hợp vào ảnh dáng. Giữ nguyên 100% trang phục và bối cảnh của ảnh dáng.',
     icon: (
        <svg xmlns="http://www.w3.org/2000/svg" className={ICON_CLASS} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
         <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
@@ -186,6 +186,16 @@ export const FEATURES = [
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className={ICON_CLASS} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M21 12.793V9a2 2 0 00-2-2h-3.343M3 11.207V15a2 2 0 002 2h3.343M9 3h.01M15 3h.01M21 3h.01M3 9h.01M3 15h.01M3 21h.01M9 21h.01M15 21h.01M21 21h.01M21 9h.01M21 15h.01M12 12h.01" />
+      </svg>
+    ),
+  },
+  {
+    id: Feature.GenerateStoryImages,
+    title: 'Tạo ảnh theo câu chuyện',
+    description: 'Tải lên câu chuyện, AI sẽ phân tích từng phân cảnh và tạo ảnh đồng nhất về nhân vật và bối cảnh.',
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className={ICON_CLASS} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18c-2.305-0-4.408.867-6 2.292m0-14.25V20" />
       </svg>
     ),
   },

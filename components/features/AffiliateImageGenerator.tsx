@@ -5,7 +5,7 @@ import UndoRedoControls from '../UndoRedoControls';
 import SendToFeature from '../SendToFeature';
 import ResultEditor from '../ResultEditor';
 import ModelSelector from '../ModelSelector';
-import { generateAffiliateImage, generateProductBackgroundImage, generateExplodedView, editImageWithPrompt, suggestProductBackgrounds, suggestPrompts } from '../../services/geminiService';
+import { generateAffiliateImage, generateProductBackgroundImage, generateExplodedView, editImageWithPrompt, suggestProductBackgrounds, suggestPrompts, virtualTryOn } from '../../services/geminiService';
 import { useUndoRedo } from '../../hooks/useUndoRedo';
 import type { Session, AffiliateImageGeneratorParams } from '../../types';
 import { Feature } from '../../types';
@@ -234,22 +234,22 @@ const AffiliateImageGenerator: React.FC<AffiliateImageGeneratorProps> = ({ sessi
                 results.push(newImage);
             }
         } else if (mode === 'kol_batch') {
-            if (modelImages.length === 0 || products.length === 0 || !prompt) {
-              setError('Vui lòng tải lên ảnh KOL, ít nhất một sản phẩm và nhập mô tả.');
+            if (modelImages.length === 0 || products.length === 0) {
+              setError('Vui lòng tải lên ảnh KOL và ít nhất một sản phẩm.');
               setIsLoading(false);
               return;
             }
             sessionParams = { mode, prompt, modelImages, products, aspectRatio, quality, numberOfImages, imageType, modelType };
             
-            // Loop through each product to generate specific images
+            // Loop through each product to generate specific images using Virtual Try-on
             for (let pIdx = 0; pIdx < products.length; pIdx++) {
                 const currentProduct = products[pIdx];
                 for (let i = 0; i < numberOfImages; i++) {
                     const progressStr = products.length > 1 ? ` (Sản phẩm ${pIdx + 1}/${products.length})` : '';
-                    setLoadingMessage(`Đang tạo ảnh ${i + 1}/${numberOfImages} cho "${currentProduct.name || `Sản phẩm ${pIdx + 1}`}"${progressStr}...`);
+                    setLoadingMessage(`Đang mặc thử ${i + 1}/${numberOfImages} cho "${currentProduct.name || `Sản phẩm ${pIdx + 1}`}"${progressStr}...`);
                     
-                    // Generate using only the current specific product
-                    const newImage = await generateAffiliateImage(modelImages, [currentProduct], prompt, aspectRatio, quality, imageType, modelType);
+                    // Use virtualTryOn for batch mode
+                    const newImage = await virtualTryOn(modelImages[0], [currentProduct.image], prompt, modelType);
                     results.push(newImage);
                 }
             }
@@ -319,8 +319,9 @@ const AffiliateImageGenerator: React.FC<AffiliateImageGeneratorProps> = ({ sessi
     }
   };
   
-  const canSubmit = (mode === 'kol' || mode === 'kol_batch') 
+  const canSubmit = mode === 'kol'
     ? modelImages.length > 0 && products.length > 0 && !!prompt.trim()
+    : mode === 'kol_batch' ? modelImages.length > 0 && products.length > 0
     : mode === 'exploded' ? !!explodedProductImage : products.length > 0;
 
   const renderSharedOptions = () => (
@@ -374,7 +375,7 @@ const AffiliateImageGenerator: React.FC<AffiliateImageGeneratorProps> = ({ sessi
                 KOL x Sản phẩm
             </button>
             <button onClick={() => setMode('kol_batch')} className={`flex-1 min-w-[120px] py-2 rounded-md transition-colors text-xs sm:text-sm font-medium ${mode === 'kol_batch' ? 'bg-purple-600 text-white' : 'text-gray-300 hover:bg-slate-600'}`}>
-                KOL hàng loạt
+                Mặc thử hàng loạt
             </button>
             <button onClick={() => setMode('product')} className={`flex-1 min-w-[120px] py-2 rounded-md transition-colors text-xs sm:text-sm font-medium ${mode === 'product' ? 'bg-purple-600 text-white' : 'text-gray-300 hover:bg-slate-600'}`}>
                 Thay nền sản phẩm
@@ -412,14 +413,16 @@ const AffiliateImageGenerator: React.FC<AffiliateImageGeneratorProps> = ({ sessi
                         )}
                         <input type="file" ref={productFileInputRef} onChange={(e) => handleFileSelect(e, 'product')} className="hidden" accept="image/*" multiple/>
                         {products.length < 20 && <button onClick={() => productFileInputRef.current?.click()} className="w-full py-3 border-2 border-dashed border-slate-600 rounded-lg flex justify-center items-center text-center cursor-pointer hover:border-purple-400 hover:bg-slate-800/50 transition-colors text-gray-300">Thêm sản phẩm (Hỗ trợ chọn nhiều)</button>}
-                        {mode === 'kol_batch' && products.length > 0 && <p className="text-[10px] text-purple-400 mt-1">* Ở chế độ hàng loạt, mỗi sản phẩm trên sẽ tạo ra ảnh riêng với KOL.</p>}
+                        {mode === 'kol_batch' && products.length > 0 && <p className="text-[10px] text-purple-400 mt-1">* Ở chế độ mặc thử hàng loạt, mỗi sản phẩm trên sẽ được mặc lên người mẫu KOL.</p>}
                     </div>
                 </div>
                 <div className="space-y-6">
                     <div>
-                        <label htmlFor="prompt-kol" className="block text-sm font-medium text-gray-300 mb-2">3. Mô tả bối cảnh và tương tác</label>
+                        <label htmlFor="prompt-kol" className="block text-sm font-medium text-gray-300 mb-2">
+                            {mode === 'kol_batch' ? '3. Mô tả bổ sung (tùy chọn)' : '3. Mô tả bối cảnh và tương tác'}
+                        </label>
                         <div className="relative">
-                            <textarea id="prompt-kol" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder="Ví dụ: KOL đang cầm sản phẩm và mỉm cười, bối cảnh studio sang trọng" rows={8} className="w-full bg-slate-700 border border-slate-600 rounded-md p-3 text-white focus:ring-purple-500 focus:border-purple-500"/>
+                            <textarea id="prompt-kol" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={mode === 'kol_batch' ? "Ví dụ: Giữ nguyên phông nền, hoặc đổi thành phông nền đường phố..." : "Ví dụ: KOL đang cầm sản phẩm và mỉm cười, bối cảnh studio sang trọng"} rows={8} className="w-full bg-slate-700 border border-slate-600 rounded-md p-3 text-white focus:ring-purple-500 focus:border-purple-500"/>
                             <button onClick={handleSuggestPrompt} disabled={isSuggesting || (modelImages.length === 0 && products.length === 0 && !prompt)} className="absolute bottom-2 right-2 text-xs bg-purple-600 hover:bg-purple-700 text-white font-semibold py-1 px-3 rounded-md disabled:bg-slate-500 disabled:cursor-not-allowed">{isSuggesting ? '...' : 'Gợi ý'}</button>
                         </div>
                         {promptSuggestions.length > 0 && <div className="mt-2 flex flex-wrap gap-2">{promptSuggestions.map((s, i) => <button key={i} onClick={() => { setPrompt(s); setPromptSuggestions([]); }} className="text-xs bg-slate-600 hover:bg-slate-500 text-gray-200 py-1 px-3 rounded-full">"{s}"</button>)}</div>}

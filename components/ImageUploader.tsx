@@ -21,7 +21,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageUpload, id, title 
         let filesToProcess = Array.from(files);
         if (maxFiles && filesToProcess.length > maxFiles) {
           filesToProcess = filesToProcess.slice(0, maxFiles);
-          alert(`Bạn chỉ có thể tải lên tối đa ${maxFiles} ảnh. Chỉ ${maxFiles} ảnh đầu tiên sẽ được xử lý.`);
+          console.warn(`Bạn chỉ có thể tải lên tối đa ${maxFiles} ảnh. Chỉ ${maxFiles} ảnh đầu tiên sẽ được xử lý.`);
         }
 
         const filePromises = filesToProcess.map((file: File) => {
