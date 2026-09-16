@@ -18,9 +18,8 @@ const getApiKey = (): string => {
   const rawKey = storedKey || process.env.API_KEY;
   
   if (rawKey) {
-    // Sanitize: Remove any non-ASCII characters and whitespace
-    // This prevents "Failed to execute 'append' on 'Headers': String contains non ISO-8859-1 code point"
-    return rawKey.replace(/[^\x00-\x7F]/g, "").trim();
+    // Sanitize: Keep printable ASCII, trim whitespaces and surrounding quotes
+    return rawKey.replace(/[^\x20-\x7E]/g, "").trim().replace(/^["']|["']$/g, '');
   }
   
   throw new Error("Vui lòng nhập Gemini API Key trong phần Cài đặt.");

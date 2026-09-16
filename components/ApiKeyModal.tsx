@@ -19,8 +19,8 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose }) => {
 
   const handleSave = () => {
     if (apiKey.trim()) {
-      // Sanitize: Remove any non-ASCII characters
-      const sanitizedKey = apiKey.replace(/[^\x00-\x7F]/g, "").trim();
+      // Sanitize: Keep printable ASCII, strip surrounding quotes and whitespace
+      const sanitizedKey = apiKey.replace(/[^\x20-\x7E]/g, "").trim().replace(/^["']|["']$/g, '');
       localStorage.setItem('GEMINI_API_KEY', sanitizedKey);
     } else {
       localStorage.removeItem('GEMINI_API_KEY');
@@ -32,6 +32,9 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   const isUsingSystemKey = !localStorage.getItem('GEMINI_API_KEY');
+  const cleanInputKey = apiKey.trim().replace(/^["']|["']$/g, '');
+  const isNewKeyFormat = cleanInputKey.startsWith('AQ.');
+  const isOldKeyFormat = cleanInputKey.startsWith('AIza');
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
@@ -61,23 +64,45 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose }) => {
         </div>
 
         <div className="mb-6">
-          <label htmlFor="apiKey" className="block text-sm font-medium text-gray-300 mb-2">
-            Gemini API Key (Tùy chọn)
-          </label>
+          <div className="flex items-center justify-between mb-2">
+            <label htmlFor="apiKey" className="block text-sm font-medium text-gray-300">
+              Gemini API Key (Tùy chọn)
+            </label>
+            {cleanInputKey && (
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                isNewKeyFormat
+                  ? 'bg-emerald-950 text-emerald-300 border border-emerald-700/60'
+                  : isOldKeyFormat
+                  ? 'bg-blue-950 text-blue-300 border border-blue-700/60'
+                  : 'bg-slate-700 text-gray-300'
+              }`}>
+                {isNewKeyFormat ? 'Định dạng mới (AQ...)' : isOldKeyFormat ? 'Định dạng cũ (AIza...)' : 'Khóa hợp lệ'}
+              </span>
+            )}
+          </div>
           <input
             type="password"
             id="apiKey"
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
             className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-            placeholder="AIzaSy..."
+            placeholder="Dán key mới dạng AQ... hoặc AIza..."
           />
-          <p className="mt-2 text-[11px] text-gray-400 leading-relaxed">
-            Nếu gặp lỗi <b>Quota Exceeded</b>, hãy xóa trắng ô này để dùng Key của Project mới, hoặc dán Key mới từ <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-purple-400 hover:underline">Google AI Studio</a>.
-          </p>
+          <div className="mt-2.5 p-2.5 bg-slate-900/60 border border-slate-700/60 rounded-md text-[11px] text-gray-300 space-y-1">
+            <p className="text-purple-300 font-medium flex items-center gap-1">
+              <span>💡</span> Google AI Studio đã chuyển sang cấu trúc API Key mới:
+            </p>
+            <ul className="list-disc list-inside text-gray-400 pl-1 space-y-0.5">
+              <li><b>Key mới:</b> Bắt đầu bằng tiền tố <code className="text-emerald-400 bg-slate-800 px-1 py-0.5 rounded">AQ.</code> (Authorization Key)</li>
+              <li><b>Key cũ:</b> Bắt đầu bằng <code className="text-blue-400 bg-slate-800 px-1 py-0.5 rounded">AIza...</code> (Standard Key)</li>
+            </ul>
+            <p className="text-gray-400 pt-0.5">
+              Ứng dụng tự động hỗ trợ và làm sạch cả 2 định dạng trên. Lấy key tại <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-purple-400 hover:underline">Google AI Studio</a>.
+            </p>
+          </div>
           {apiKey && !isUsingSystemKey && (
-            <p className="text-[10px] text-gray-500 mt-1">
-              Đang sử dụng: {apiKey.substring(0, 6)}...{apiKey.substring(apiKey.length - 4)}
+            <p className="text-[10px] text-gray-400 mt-2 font-mono">
+              Đang sử dụng: {cleanInputKey.substring(0, 6)}...{cleanInputKey.substring(cleanInputKey.length - 4)}
             </p>
           )}
         </div>
