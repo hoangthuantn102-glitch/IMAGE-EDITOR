@@ -1,0 +1,6 @@
+{
+  "name": "Remix: LAO HAC BHT AI Image Editor Pro 3.9",
+  "description": "Một ứng dụng chỉnh sửa và tạo hình ảnh AI thông minh: thiết kế maket sân khấu hội nghị sự kiện, thay thế phông nền, đổi trang phục, tạo ảnh theo ý tưởng và poster chuyên nghiệp.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
