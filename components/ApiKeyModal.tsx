@@ -99,6 +99,10 @@ const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose }) => {
             <p className="text-gray-400 pt-0.5">
               Ứng dụng tự động hỗ trợ và làm sạch cả 2 định dạng trên. Lấy key tại <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-purple-400 hover:underline">Google AI Studio</a>.
             </p>
+            <div className="pt-1.5 border-t border-slate-700/60 text-amber-300/90 text-[10.5px] leading-relaxed">
+              ⚠️ <b>Vì sao Key mới chưa dùng bao giờ lại báo Hết hạn mức (429)?</b><br/>
+              Mô hình tạo ảnh AI (Gemini Image) yêu cầu Google Cloud Project phải được <b>bật thanh toán (Billing)</b>. Nếu dự án là tài khoản miễn phí (Free Tier chưa liên kết thẻ thanh toán), Google sẽ đặt hạn mức tạo ảnh là <b>0 ảnh/phút</b>, dẫn đến bị chặn ngay lập tức.
+            </div>
           </div>
           {apiKey && !isUsingSystemKey && (
             <p className="text-[10px] text-gray-400 mt-2 font-mono">

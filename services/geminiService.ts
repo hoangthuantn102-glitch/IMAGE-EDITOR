@@ -37,6 +37,19 @@ const fileToGenerativePart = (dataUrl: string): Part => {
   };
 };
 
+export const formatGeminiError = (err: any): Error => {
+  const msg = err?.message || String(err);
+  if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
+    return new Error(
+      "Hết hạn mức (Quota Exceeded / 429):\n\n" +
+      "1. NGUYÊN NHÂN CHÍNH VỚI KEY MỚI: Các mô hình tạo/chỉnh sửa ảnh AI của Google (Gemini Image) yêu cầu dự án Google Cloud phải được liên kết thanh toán (Billing). Nếu dự án ở gói Miễn phí (Free Tier), Google thường đặt hạn mức tạo ảnh là 0 lượt/phút (limit = 0), dẫn đến báo lỗi ngay lần đầu gọi dù Key mới chưa dùng bao giờ.\n\n" +
+      "2. KIỂM TRA ĐÃ LƯU KEY CHƯA: Hãy mở Cài đặt (biểu tượng bánh răng) kiểm tra xem đã bấm 'Lưu' Key mới chưa, tránh việc trình duyệt vẫn đang gửi Key cũ đã hết hạn.\n\n" +
+      "3. GIỚI HẠN TỐC ĐỘ (RPM): Nếu chọn tạo nhiều ảnh cùng lúc, hãy thử chọn số lượng là 1 ảnh và đợi vài giây giữa các lần tạo."
+    );
+  }
+  return err instanceof Error ? err : new Error(msg);
+};
+
 const performImageEdit = async (prompt: string, model: string, ...images: string[]): Promise<string> => {
   const ai = new GoogleGenAI({ apiKey: getApiKey() });
   const imageParts = images.map(fileToGenerativePart);
@@ -50,10 +63,7 @@ const performImageEdit = async (prompt: string, model: string, ...images: string
     model: model,
     contents: contents,
   }).catch(err => {
-    if (err.message?.includes('429') || err.message?.includes('RESOURCE_EXHAUSTED')) {
-      throw new Error("Hết hạn mức (Quota Exceeded): Bạn đã vượt quá giới hạn của API Key hiện tại. \n\nLƯU Ý: Nếu bạn vừa tạo Project mới, hãy vào phần 'Cài đặt' (biểu tượng bánh răng) và XÓA API Key cũ đang lưu trong đó để ứng dụng dùng Key mới của Project này.");
-    }
-    throw err;
+    throw formatGeminiError(err);
   });
 
   for (const part of response.candidates?.[0]?.content?.parts ?? []) {
@@ -81,6 +91,11 @@ export const generateImageFromText = async (
   const modelToUse = getModelToUse(config.modelType);
   
   for (let i = 0; i < config.numberOfImages; i++) {
+    if (i > 0) {
+      // Pacing delay to avoid RPM bursts on strict rate limit tiers
+      await new Promise(resolve => setTimeout(resolve, 800));
+    }
+
     const response = await ai.models.generateContent({
       model: modelToUse,
       contents: { parts: [{ text: prompt }] },
@@ -88,10 +103,7 @@ export const generateImageFromText = async (
         imageConfig: { aspectRatio: config.aspectRatio },
       },
     }).catch(err => {
-      if (err.message?.includes('429') || err.message?.includes('RESOURCE_EXHAUSTED')) {
-        throw new Error("Hết hạn mức (Quota Exceeded): Bạn đã vượt quá giới hạn của API Key hiện tại. Hãy kiểm tra phần 'Cài đặt' để đảm bảo bạn không dùng nhầm Key cũ.");
-      }
-      throw err;
+      throw formatGeminiError(err);
     });
 
     let found = false;
@@ -553,10 +565,7 @@ export const analyzeStory = async (story: string): Promise<{ scenes: string[], c
             }
         }
     }).catch(err => {
-        if (err.message?.includes('429') || err.message?.includes('RESOURCE_EXHAUSTED')) {
-            throw new Error("Hết hạn mức (Quota Exceeded): Vui lòng đợi một lát hoặc kiểm tra lại API Key trong phần 'Cài đặt'.");
-        }
-        throw err;
+        throw formatGeminiError(err);
     });
     try {
         const text = response.text;
